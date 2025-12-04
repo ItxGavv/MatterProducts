@@ -33,8 +33,7 @@ local function modApiCheck(inputText)
 			Url = MODERATION_API_URL,
 			Method = "POST",
 			Headers = {
-				["Content-Type"] = "application/json",
-				["User-Agent"] = "Roblox/Lua" 
+				["Content-Type"] = "application/json"
 			},
 			Body = body,
 		})
