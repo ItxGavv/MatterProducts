@@ -1,8 +1,4 @@
--- Notifier Inspire - Optimized Panel Core (drop-in)
--- Keeps all features; fixes subtle bugs; improves safety & performance.
-
 -- == Boot / Globals ==
-script.Checksum.Enabled = true
 task.wait(2)
 
 local RunService = game:GetService("RunService")
@@ -29,6 +25,8 @@ local PIEZO_HANDLER = script.piezo_handler
 -- Power LED on (unchanged)
 PANEL.Indicators.PowerLED.BrickColor = BrickColor.new("Lime green")
 PANEL.Indicators.PowerLED.Material = Enum.Material.Neon
+
+PANEL.Screen.InspireDisplay.Enabled = true
 
 -- External deps / config
 local networkConfig = require(ROOT.Parent.Parent.Parent.Global_Dependencies.Network_Configuration.NetworkConfig)
