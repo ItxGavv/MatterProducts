@@ -1,7 +1,7 @@
-script.Checksum.Enabled = true
 wait(2)
 script.Parent.NCD.Indicators.PowerLED.BrickColor = BrickColor.new("Lime green")
 script.Parent.NCD.Indicators.PowerLED.Material = Enum.Material.Neon
+PANEL.Screen.InspireDisplay.Enabled = true
 local networkConfig = require(script.Parent.Parent.Parent.Parent.Global_Dependencies.Network_Configuration.NetworkConfig)
 local Network = script.Parent.Parent.Parent.Parent.Comm
 local Node_Settings = require(script.Parent.NodeConfig)
