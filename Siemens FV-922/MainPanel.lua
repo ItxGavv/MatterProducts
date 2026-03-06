@@ -1,61 +1,11 @@
--- ============================================================
--- Siemens FV-922 / FC-922 Transponder / Annunciator Script
--- 1:1 Recreation - Roblox Edition
--- Ref: FC92x/FT924 Operation Manual A6V10333380_a_en_US
--- ============================================================
--- FULL MENU STRUCTURE (per spec section 3.6):
---   MAIN MENU
---     Message summary
---     Functions
---       Enable / Bypass        (AL2)
---       Test                   (AL2)
---       Activate / Deactivate  (AL2)
---       Information            (AL1)
---       Configuration          (AL3)
---       Maintenance            (AL2)
---     Favorites
---     Topology
---     Element search
---     Event memory
---     Login / logout           <-- dedicated entry
---     Settings / administration
---       Change PIN             (AL2)
---       Create PIN             (AL3)
---       Delete PIN             (AL3)
---       LED test
---       Set buzzer volume
---       Display settings
---       System commands (date/time)
--- ============================================================
--- LED BEHAVIOR (per spec table, section 3.1):
---   ALARM       Red   Off / Unack=Flash / Ack=Steady
---   Gas ALARM   Red   Off / Unack=Flash / Ack=Steady
---   Supervisory Yel   Off / Unack=Flash / Ack=Steady
---   Trouble     Yel   Off / Unack=Flash / Ack=Steady
---   Partial Dis Yel   Off / Unack=Flash / Ack=Steady
---   Ground Flt  Yel   Off / Unack=Flash / Ack=Steady
---   Ack         Yel   Off / Unack=RAPID flash
---   Reset       Yel   Off / Unack=RAPID flash
---   Silenced    Yel   Off / Active=Steady
---   Audibles On Yel   Off / Active=Steady
---   Power       Grn   AC=Steady / Battery=Slow flash
--- INTERNAL AUDIBLE (per spec section 4):
---   Steady  = unacknowledged fire/gas alarm
---   Pulsing = all fire/gas ack'd, but SUP/TBL pending
---   Silent  = system normal or silenced
--- BACKLIGHT (per spec 3.3.5):
---   ON  = keypress OR unack event with acoustics
---   OFF = 5-min countdown after all conditions clear
--- ACCESS LEVELS (per spec 6.6):
---   0 = Guest  (view only, no PIN)
---   1 = Operator (Ack/Silence/Reset, no PIN)
---   2 = Maintenance (Bypass/Test/Commands, PIN required)
---   3 = Engineer (Full config, PIN required)
--- ============================================================
-
 local trans  = script.Parent
 local system = trans.Parent
+local SystemConfig = require(system.System.SystemConfig)
+local HttpService = game:GetService("HttpService")
+local conf = SystemConfig
 
+system.System.SystemConfig:Destroy()
+warn("[Siemens FV-922]: System Settings Initialized.")
 -- ─────────────────────────────────────────────────────────────
 -- STATE
 -- ─────────────────────────────────────────────────────────────
@@ -77,10 +27,20 @@ local ledFlashThreads = {}
 
 local accessLevel    = 0
 local accessTimeout  = nil
-local PIN_LEVEL2     = "1234"
-local PIN_LEVEL3     = "9999"
+local PIN_LEVEL2     = conf.Users.LEVEL_2
+local PIN_LEVEL3     = conf.Users.LEVEL_3
 local pinEcon        = nil
 local pinOnSuccess   = nil
+
+local title = conf.Preferences.System_Title or "Siemens FV-922"
+local WEBHOOK_URL = conf.Communicator.Webhook_URL or nil
+local COLOR_MAP = {
+	[1] = 16711680, -- Red    (#FF0000)
+	[2] = 16744272, -- Orange (#FF6810)
+	[3] = 16776960, -- Yellow (#FFFF00)
+	[4] = 255,      -- Blue   (#0000FF)
+}
+
 
 local backlightThread  = nil
 local BACKLIGHT_TIMEOUT = 300
@@ -198,6 +158,44 @@ local function accessLevelName(lvl)
 	return "Unknown"
 end
 
+
+local function sendDiscordEmbed(EventType, ColorCode, DeviceAddress, DeviceName)
+	local color = COLOR_MAP[ColorCode] or 0 -- Falls back to black if invalid code
+
+	local embedData = {
+		embeds = {
+			{
+				title = EventType,
+				color = color,
+				fields = {
+					{
+						name = "Device Name",
+						value = DeviceName,
+						inline = true
+					},
+					{
+						name = "Device Address",
+						value = DeviceAddress,
+						inline = true
+					},
+				},
+				timestamp = DateTime.now():ToIsoDate()
+			}
+		}
+	}
+
+	local success, err = pcall(function()
+		HttpService:PostAsync(
+			WEBHOOK_URL,
+			HttpService:JSONEncode(embedData),
+			Enum.HttpContentType.ApplicationJson
+		)
+	end)
+
+	if not success then
+		warn("Failed to send Discord embed: " .. tostring(err))
+	end
+end
 -- ─────────────────────────────────────────────────────────────
 -- BACKLIGHT
 -- ─────────────────────────────────────────────────────────────
@@ -524,12 +522,17 @@ HomeDisplay = function()
 		clearLines(5, 10); task.wait(2)
 		setLine(7, "Command~execution~successful~~~~~~~~~~~~"); task.wait(2)
 		setLine(1, "System~Resetting~~~~~~~~~~~~~~~~~~~~~~~~")
-		setLine(2, system.Title.Value)
+		setLine(2, title)
 		setLine(3, "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 		setLine(4, "~~~~~~~~~~~~~~~~SIEMENS~~~~~~~~~~~~~~~~~")
 		clearLines(5, 8)
 		setLine(9, "~~~~~Message~~~~~~~Event~~~~~~~LED~~~~~~")
 		setLine(10,"~~~~~summary~~~~~~~memory~~~~~~test~~~~~")
+		if conf.Communicator.Enabled then
+			if conf.Communicator.Reports.System_Reset then
+				sendDiscordEmbed("System Reset",4,"Node","Node Operation")
+			end
+		end
 		task.wait(4.5); home = true; return
 	end
 
@@ -550,7 +553,7 @@ HomeDisplay = function()
 
 	if modeLabel == nil then
 		setLine(1,  "000~~" .. os.date("%m/%d/%Y~~%I:%M~%p"))
-		setLine(2,  system.Title.Value)
+		setLine(2,  title)
 		setLine(3,  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 		setLine(4,  "~~~~~~~~~~~~~~~~SIEMENS~~~~~~~~~~~~~~~~~")
 		setLine(5,  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
@@ -1246,7 +1249,7 @@ ChangeCustomerText = function()
 	disconnectAll(); home = false
 	numpaden = true; capacity = 20; input = ""; numprefix = "Text:~"
 	setLine(1,"Enter~/~Change~Customer~Text~~~~~~~~~~~~")
-	setLine(2,"Current:~"..system.Title.Value)
+	setLine(2,"Current:~"..title)
 	setLine(3,"Enter~new~building~title:~~~~~~~~~~~~~~~")
 	clearLines(4,5); setLine(6,"Text:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 	clearLines(7,9); setLine(10,"~~~~~Cancel~~~~~~~~~~~~~~~~~~~~~OK~~~~~~")
@@ -1254,7 +1257,7 @@ ChangeCustomerText = function()
 	econ = trans.Buttons.BTN_Enter.CD.MouseClick:Connect(function()
 		if locked then return end; numpaden = false; disconnectEcon()
 		if input ~= "" then
-			system.Title.Value = input
+			title = input
 			setLine(2,"Updated:~"..input)
 			setLine(6,"Customer~text~saved~successfully.~~~~~~~"); task.wait(1.5)
 		end
@@ -2048,13 +2051,25 @@ local eventFolders = {
 for _, f in ipairs(eventFolders) do
 	local folder = system:FindFirstChild(f.name)
 	if folder then
-		folder.ChildAdded:Connect(function(m) NewEvent(f.prefix, m) end)
+		folder.ChildAdded:Connect(function(m) 
+			NewEvent(f.prefix, m) 
+			if folder.Name == "ActiveAlarms" then
+				sendDiscordEmbed("Fire Alarm",1,m.Name,m.DeviceName.Value)
+			elseif folder.Name == "Supervisory" then
+				sendDiscordEmbed("System Supervisory",2,m.Name,m.DeviceName.Value)
+			elseif folder.Name == "Trouble" then
+				sendDiscordEmbed("System Trouble",3,m.Name,m.DeviceName.Value)
+			elseif folder.Name == "GasAlarms" then
+				sendDiscordEmbed("Gas Alarm",2,m.Name,m.DeviceName.Value)	
+			end
+		end)
 		folder.ChildRemoved:Connect(function()
 			newalarm = ""; newalarmType = ""
 			ackIndex = 1; ackFolderIndex = 1; ackPending = false
 			updateAllLEDs(); updateSounder()
 			if home then HomeDisplay() end
 		end)
+		
 	end
 end
 
@@ -2099,6 +2114,7 @@ game.Players.PlayerAdded:Connect(function()
 		setLine(7,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"); setLine(8,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 		setLine(9,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"); setLine(10,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 		task.wait(3); script.Parent.Parent.ResetCommand.Value = true
+		sendDiscordEmbed("System Started",4,"Node","Node")
 	end
 end)
 
@@ -2110,5 +2126,6 @@ local pwrLED = trans:FindFirstChild("PowerLED")
 if pwrLED then
 	if pwrLED:FindFirstChild("Activate") then pwrLED.Activate.Value = true
 	elseif pwrLED:IsA("BasePart") then pwrLED.BrickColor = BrickColor.new("Lime green") end
+		
 end
 updateAllLEDs()
