@@ -213,7 +213,7 @@ end
 
 system.ResetCommand.Changed:Connect(ResetSystem)
 system.SoundCont.Changed:Connect(function(Val)
-	if Val == "Stop" then return end
+	if Val == "Stop" or if Val == "" then return end
 	prevMsg = Val
 	print("[Siemens FV-922]: Logged "..Val)
 end)
