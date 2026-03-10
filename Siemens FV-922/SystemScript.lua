@@ -215,6 +215,7 @@ system.ResetCommand.Changed:Connect(ResetSystem)
 system.SoundCont.Changed:Connect(function(Val)
 	if Val == "Stop" then return end
 	prevMsg = Val
+	print("[Siemens FV-922]: Logged "..Val)
 end)
 function SilenceSignals()
 	if system.SilenceCommand.Value == true and
