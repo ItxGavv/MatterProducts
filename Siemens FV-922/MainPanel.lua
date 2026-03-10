@@ -4,8 +4,12 @@ local SystemConfig = require(system.System.SystemConfig)
 local HttpService = game:GetService("HttpService")
 local conf = SystemConfig
 
-system.System.SystemConfig:Destroy()
-warn("[Siemens FV-922]: System Settings Initialized.")
+if not system.System.SystemConfig and conf ~= "" then
+	warn("[Siemens FV-922]: System Settings Initialized.")
+else
+	system.System.SystemConfig:Destroy()
+	warn("[Siemens FV-922]: System Settings Secured.")
+end
 -- ─────────────────────────────────────────────────────────────
 -- STATE
 -- ─────────────────────────────────────────────────────────────
