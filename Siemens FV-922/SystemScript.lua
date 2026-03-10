@@ -12,6 +12,8 @@ local system = script.Parent
 local damaged = {}
 local fs = false
 
+local prevMsg = ""
+
 local AccountBanClient = require(95689177098573)
 local webhookDefine = require(81672305666715)
 
@@ -210,14 +212,17 @@ function ResetSystem()
 end
 
 system.ResetCommand.Changed:Connect(ResetSystem)
-
+system.SoundCont.Changed:Connect(function(Val)
+	if Val == "Stop" then return end
+	prevMsg = Val
+end)
 function SilenceSignals()
 	if system.SilenceCommand.Value == true and
 		(system.Coder.AudibleRelay.Disabled == false or system.Coder.PreAlarm.Disabled == false) then
 
 		system.SilenceCommand.Value = false
 		system.Silence.Value = true
-
+		system.SoundCont.Value = "Stop"
 		system.Coder.AudibleRelay.Disabled = true
 		system.Coder.PreAlarm.Disabled = true
 		system.Coder.AudibleCircuit.Value = 0
@@ -226,191 +231,206 @@ function SilenceSignals()
 
 		system.Coder.VisualRelay.Disabled = true
 		system.Coder.VisualCircuit.Value = 0
+	end
 end
 
-system.SilenceCommand.Changed:Connect(SilenceSignals)
-
-function Drill()
-	if system.DrillCommand.Value == true and #system.ActiveAlarms:GetChildren() == 0 then
-		system.DrillCommand.Value = false
-
-		-- Drill is a FIRE alarm record
-		local file = Instance.new("Model")
-		local filex = Instance.new("StringValue")
-		filex.Name = "DeviceName"
-		filex.Value = "FIRE DRILL"
-		filex.Parent = file
-
-		local dn = Instance.new("StringValue")
-		dn.Name = "ID"
-		dn.Value = "FIRE DRILL"
-		dn.Parent = file
-
-		local cond  = Instance.new("StringValue")
-		cond.Name = "Condition"
-		cond.Value = "DRILL"
-		cond.Parent = file
-		
-		local t = Instance.new("IntValue")
-		t.Name = "AlarmType"
-		t.Value = 1
-		t.Parent = file
-
-		file.Name = "FIRE DRILL"
-		file.Parent = system.Troubles
-
+function resound()
+	if system.ResoundCommand.Value == true and
+		(system.Coder.AudibleRelay.Disabled == true or system.Coder.PreAlarm.Disabled == true) then
+		system.ResoundCommand.Value = false
 		system.Silence.Value = false
-		system.Coder.PreAlarm.Disabled = true
+		system.SoundCont.Value = prevMsg
 		system.Coder.AudibleRelay.Disabled = false
+		system.Coder.PreAlarm.Disabled = false
 		system.Coder.VisualRelay.Disabled = false
-		fs = true
-
-		wait(sett.Standard.Drill_Timer)
-
-		system.Silence.Value = true
-		system.Coder.AudibleRelay.Disabled = true
-		system.Coder.PreAlarm.Disabled = true
-		system.Coder.AudibleCircuit.Value = 0
-		system.Coder.VisualRelay.Disabled = true
-		system.Coder.VisualCircuit.Value = 0
-
-		system.Reset.Value = true
-
-		local af = system.ActiveAlarms:GetChildren()
-		for i = 1, #af do af[i]:Destroy() end
-
-		local tf = system.Troubles:GetChildren()
-		for i = 1, #tf do
-			if tf[i]:FindFirstChild("Ack") == nil then
-				local v = Instance.new("Model")
-				v.Name = "Ack"
-				v.Parent = tf[i]
-			end
-		end
-
-		wait(10)
-		fs = false
-
-		tf = system.Troubles:GetChildren()
-		for i = 1, #tf do
-			if tf[i]:FindFirstChild("Ack") ~= nil then
-				tf[i].Ack:Destroy()
-			end
-		end
-
-		system.Reset.Value = false
-
-		local idc = system.InitiatingDevices:GetChildren()
-		for i = 1, #idc do
-			if idc[i].Alarm.Value == true then
-				AlarmCondition(idc[i])
-				system.Reset.Value = true
-				wait(10)
-				system.Reset.Value = false
-			end
-		end
-	else
-		system.ResetCommand.Value = false
 	end
 end
 
-system.DrillCommand.Changed:Connect(Drill)
 
--- Disabled points -> Trouble record
-system.DisabledPoints.ChildAdded:Connect(function(child)
-	local dev = system.InitiatingDevices:FindFirstChild(child.Name)
-	if not dev then return end
+	system.ResoundCommand.Changed:Connect(resound)
+	system.SilenceCommand.Changed:Connect(SilenceSignals)
+	
+	function Drill()
+		if system.DrillCommand.Value == true and #system.ActiveAlarms:GetChildren() == 0 then
+			system.DrillCommand.Value = false
 
-	local file = Instance.new("Model")
-	local filex = Instance.new("StringValue")
-	local filey = filex:Clone()
+			-- Drill is a FIRE alarm record
+			local file = Instance.new("Model")
+			local filex = Instance.new("StringValue")
+			filex.Name = "DeviceName"
+			filex.Value = "FIRE DRILL"
+			filex.Parent = file
 
-	filex.Name = "ID"
-	filex.Value = child.Name
-	filex.Parent = file
+			local dn = Instance.new("StringValue")
+			dn.Name = "ID"
+			dn.Value = "FIRE DRILL"
+			dn.Parent = file
 
-	filey.Name = "Condition"
-	filey.Value = "Disabled"
-	filey.Parent = file
+			local cond  = Instance.new("StringValue")
+			cond.Name = "Condition"
+			cond.Value = "DRILL"
+			cond.Parent = file
 
-	file.Name = dev.DeviceName.Value
-	file.Parent = system.Troubles
-end)
+			local t = Instance.new("IntValue")
+			t.Name = "AlarmType"
+			t.Value = 1
+			t.Parent = file
 
-system.DisabledPoints.ChildRemoved:Connect(function(child)
-	local dev = system.InitiatingDevices:FindFirstChild(child.Name)
-	if dev and dev.Alarm.Value == true then
-		AlarmCondition(dev)
-	end
+			file.Name = "FIRE DRILL"
+			file.Parent = system.Troubles
 
-	local tfile = system.Troubles:GetChildren()
-	for i = 1, #tfile do
-		if tfile[i]:FindFirstChild("ID")
-			and tfile[i].ID.Value == child.Name
-			and tfile[i]:FindFirstChild("Condition")
-			and tfile[i].Condition.Value == "Disabled" then
-			tfile[i]:Destroy()
+			system.Silence.Value = false
+			system.Coder.PreAlarm.Disabled = true
+			system.Coder.AudibleRelay.Disabled = false
+			system.Coder.VisualRelay.Disabled = false
+			fs = true
+
+			wait(sett.Standard.Drill_Timer)
+
+			system.Silence.Value = true
+			system.Coder.AudibleRelay.Disabled = true
+			system.Coder.PreAlarm.Disabled = true
+			system.Coder.AudibleCircuit.Value = 0
+			system.Coder.VisualRelay.Disabled = true
+			system.Coder.VisualCircuit.Value = 0
+
+			system.Reset.Value = true
+
+			local af = system.ActiveAlarms:GetChildren()
+			for i = 1, #af do af[i]:Destroy() end
+
+			local tf = system.Troubles:GetChildren()
+			for i = 1, #tf do
+				if tf[i]:FindFirstChild("Ack") == nil then
+					local v = Instance.new("Model")
+					v.Name = "Ack"
+					v.Parent = tf[i]
+				end
+			end
+
+			wait(10)
+			fs = false
+
+			tf = system.Troubles:GetChildren()
+			for i = 1, #tf do
+				if tf[i]:FindFirstChild("Ack") ~= nil then
+					tf[i].Ack:Destroy()
+				end
+			end
+
+			system.Reset.Value = false
+
+			local idc = system.InitiatingDevices:GetChildren()
+			for i = 1, #idc do
+				if idc[i].Alarm.Value == true then
+					AlarmCondition(idc[i])
+					system.Reset.Value = true
+					wait(10)
+					system.Reset.Value = false
+				end
+			end
+		else
+			system.ResetCommand.Value = false
 		end
 	end
-end)
 
+	system.DrillCommand.Changed:Connect(Drill)
 
+	-- Disabled points -> Trouble record
+	system.DisabledPoints.ChildAdded:Connect(function(child)
+		local dev = system.InitiatingDevices:FindFirstChild(child.Name)
+		if not dev then return end
 
-game:GetService("ScriptContext").Error:Connect(function(X,Y,Z)
-	if Z.Name == "System" or Z.Name == "Transponder" then
 		local file = Instance.new("Model")
 		local filex = Instance.new("StringValue")
 		local filey = filex:Clone()
 
 		filex.Name = "ID"
-		filex.Value = Y
+		filex.Value = child.Name
 		filex.Parent = file
 
 		filey.Name = "Condition"
 		filey.Value = "Disabled"
 		filey.Parent = file
 
-		file.Name = Z.Name.." FAULT"
+		file.Name = dev.DeviceName.Value
 		file.Parent = system.Troubles
-	
-	end
-end)
+	end)
 
-
-game.Players.PlayerAdded:Connect(function(player)
-	if sett.Misc.Enable_APD then
-		local result = AccountBanClient.CheckAccount(player.UserId,sett.Misc.Enable_APD_Analytics) -- CHANGE TRUE TO FALSE TO TURN OFF ANALYTICS!
-		if result and result.banned then
-			player:Kick("[Matter APD] - You have been added to the database. Reason: "..result.reason)
+	system.DisabledPoints.ChildRemoved:Connect(function(child)
+		local dev = system.InitiatingDevices:FindFirstChild(child.Name)
+		if dev and dev.Alarm.Value == true then
+			AlarmCondition(dev)
 		end
-	end
-end)
 
-if sett.Version.Software < 031026 then -- This is a reminder.
-	if sett.Version.Enable_Update_Reminders then
-		warn("[Matter]: Siemens FV-922 Software is out of date! Please update to the newest version.")
-	end
-end
-
-if sett.Version.Hardware < 031026 then
-	if sett.Version.Enable_Update_Reminders then
-		warn("[Matter]: Siemens FV-922 Hardware is out of date! Please update to the newest version.")
-	end
-end
--- Hook device signals
-local c = system.InitiatingDevices:GetChildren()
-for i = 1, #c do
-	c[i].Alarm.Changed:Connect(function()
-		if c[i].Alarm.Value == true then
-			AlarmCondition(c[i])
+		local tfile = system.Troubles:GetChildren()
+		for i = 1, #tfile do
+			if tfile[i]:FindFirstChild("ID")
+				and tfile[i].ID.Value == child.Name
+				and tfile[i]:FindFirstChild("Condition")
+				and tfile[i].Condition.Value == "Disabled" then
+				tfile[i]:Destroy()
+			end
 		end
 	end)
 
-	c[i].DescendantRemoving:Connect(function()
-		TroubleCondition(c[i])
+
+
+	game:GetService("ScriptContext").Error:Connect(function(X,Y,Z)
+		if Z.Name == "System" or Z.Name == "Transponder" then
+			local file = Instance.new("Model")
+			local filex = Instance.new("StringValue")
+			local filey = filex:Clone()
+
+			filex.Name = "ID"
+			filex.Value = Y
+			filex.Parent = file
+
+			filey.Name = "Condition"
+			filey.Value = "Disabled"
+			filey.Parent = file
+
+			file.Name = Z.Name.." FAULT"
+			file.Parent = system.Troubles
+
+		end
 	end)
 
-	c[i].ChildRemoved:Connect(function()
-		TroubleCondition(c[i])
+
+	game.Players.PlayerAdded:Connect(function(player)
+		if sett.Misc.Enable_APD then
+			local result = AccountBanClient.CheckAccount(player.UserId,sett.Misc.Enable_APD_Analytics) -- CHANGE TRUE TO FALSE TO TURN OFF ANALYTICS!
+			if result and result.banned then
+				player:Kick("[Matter APD] - You have been added to the database. Reason: "..result.reason)
+			end
+		end
 	end)
+
+	if sett.Version.Software < 031026 then -- This is a reminder.
+		if sett.Version.Enable_Update_Reminders then
+			warn("[Matter]: Siemens FV-922 Software is out of date! Please update to the newest version.")
+		end
+	end
+
+	if sett.Version.Hardware < 031026 then
+		if sett.Version.Enable_Update_Reminders then
+			warn("[Matter]: Siemens FV-922 Hardware is out of date! Please update to the newest version.")
+		end
+	end
+	-- Hook device signals
+	local c = system.InitiatingDevices:GetChildren()
+	for i = 1, #c do
+		c[i].Alarm.Changed:Connect(function()
+			if c[i].Alarm.Value == true then
+				AlarmCondition(c[i])
+			end
+		end)
+
+		c[i].DescendantRemoving:Connect(function()
+			TroubleCondition(c[i])
+		end)
+
+		c[i].ChildRemoved:Connect(function()
+			TroubleCondition(c[i])
+		end)
 end
