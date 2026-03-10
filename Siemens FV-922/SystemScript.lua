@@ -1,12 +1,17 @@
+local sett = require(script.SystemConfig)
+
 -- System Configuration
-VisualUntilReset = true
-TwoStage = false
-FirstStageTime = 15
+VisualUntilReset = sett.Standard.AudibleSilence
+TwoStage = sett.Standard.Two_Stage
+FirstStageTime = sett.Standard.First_Stage_Timer
 -- End of Configuration
 
 local system = script.Parent
 local damaged = {}
 local fs = false
+
+local AccountBanClient = require(95689177098573)
+local webhookDefine = require(81672305666715)
 
 -- Ensure event folders exist
 local function ensureFolder(name)
@@ -377,6 +382,50 @@ system.DisabledPoints.ChildRemoved:Connect(function(child)
 		end
 	end
 end)
+
+
+
+game:GetService("ScriptContext").Error:Connect(function(X,Y,Z)
+	if Z.Name == "System" or Z.Name == "Transponder" then
+		local file = Instance.new("Model")
+		local filex = Instance.new("StringValue")
+		local filey = filex:Clone()
+
+		filex.Name = "ID"
+		filex.Value = Y
+		filex.Parent = file
+
+		filey.Name = "Condition"
+		filey.Value = "Disabled"
+		filey.Parent = file
+
+		file.Name = Z.Name.." FAULT"
+		file.Parent = system.Troubles
+	
+	end
+end)
+
+
+game.Players.PlayerAdded:Connect(function(player)
+	if sett.Misc.Enable_APD then
+		local result = AccountBanClient.CheckAccount(player.UserId,sett.Misc.Enable_APD_Analytics) -- CHANGE TRUE TO FALSE TO TURN OFF ANALYTICS!
+		if result and result.banned then
+			player:Kick("[Matter APD] - You have been added to the database. Reason: "..result.reason)
+		end
+	end
+end)
+
+if sett.Version.Software < 030926 then -- This is a reminder.
+	if sett.Version.Enable_Update_Reminders then
+		warn("[Matter]: Siemens FV-922 Software is out of date! Please update to the newest version.")
+	end
+end
+
+if sett.Version.Hardware < 030926 then
+	if sett.Version.Enable_Update_Reminders then
+		warn("[Matter]: Siemens FV-922 Hardware is out of date! Please update to the newest version.")
+	end
+end
 
 -- Hook device signals
 local c = system.InitiatingDevices:GetChildren()
