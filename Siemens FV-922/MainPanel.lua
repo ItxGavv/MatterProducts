@@ -1875,7 +1875,7 @@ trans.Buttons.BTN_Silence.CD.MouseClick:Connect(function()
 		setLine(1,"Audibles~Resounded~~~~~~~~~~~~~~~~~~~~~~~"); setLine(2,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"); clearLines(3,10)
 	else
 		system.SilenceCommand.Value = true
-		silVal.Value = true; updateSounder(); updateAllLEDs()
+		updateSounder(); updateAllLEDs()
 		setLine(1,"Audibles~Silenced~~~~~~~~~~~~~~~~~~~~~~~"); setLine(2,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"); clearLines(3,10)
 	end 
 	task.wait(1.5)
