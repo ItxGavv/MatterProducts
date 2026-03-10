@@ -1871,11 +1871,11 @@ trans.Buttons.BTN_Silence.CD.MouseClick:Connect(function()
 	activateBacklight(); resetAccessTimeout()
 	if system.Silence.Value then
 		system.ResoundCommand.Value = true
-		silVal.Value = false; updateAllLEDs()
+		updateAllLEDs()
 		setLine(1,"Audibles~Resounded~~~~~~~~~~~~~~~~~~~~~~~"); setLine(2,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"); clearLines(3,10)
 	else
 		system.SilenceCommand.Value = true
-		silVal.Value = true; stopSounder(); updateAllLEDs()
+		silVal.Value = true; updateSounder(); updateAllLEDs()
 		setLine(1,"Audibles~Silenced~~~~~~~~~~~~~~~~~~~~~~~"); setLine(2,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"); clearLines(3,10)
 	end 
 	task.wait(1.5)
