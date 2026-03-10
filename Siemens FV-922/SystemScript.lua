@@ -226,47 +226,6 @@ function SilenceSignals()
 
 		system.Coder.VisualRelay.Disabled = true
 		system.Coder.VisualCircuit.Value = 0
-
-		-- Clear ALL alarm folders (fire + gas + sup) on silence when visuals not until reset
-		local af = system.ActiveAlarms:GetChildren()
-		for i = 1, #af do af[i]:Destroy() end
-
-		local gf = system.GasAlarms:GetChildren()
-		for i = 1, #gf do gf[i]:Destroy() end
-
-		local sf = system.Supervisory:GetChildren()
-		for i = 1, #sf do sf[i]:Destroy() end
-
-		local tf = system.Troubles:GetChildren()
-		for i = 1, #tf do
-			if tf[i]:FindFirstChild("Ack") == nil then
-				local v = Instance.new("Model")
-				v.Name = "Ack"
-				v.Parent = tf[i]
-			end
-		end
-
-		wait(10)
-		fs = false
-
-		tf = system.Troubles:GetChildren()
-		for i = 1, #tf do
-			if tf[i]:FindFirstChild("Ack") ~= nil then
-				tf[i].Ack:Destroy()
-			end
-		end
-
-		system.Reset.Value = false
-
-		local idc = system.InitiatingDevices:GetChildren()
-		for i = 1, #idc do
-			if idc[i].Alarm.Value == true then
-				AlarmCondition(idc[i])
-			end
-		end
-	else
-		system.SilenceCommand.Value = false
-	end
 end
 
 system.SilenceCommand.Changed:Connect(SilenceSignals)
