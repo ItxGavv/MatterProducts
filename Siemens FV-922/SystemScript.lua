@@ -280,6 +280,11 @@ function Drill()
 		filex.Value = "Drill"
 		filex.Parent = file
 
+		local dn = Instance.new("StringValue")
+		dn.Name = "DeviceName"
+		dn.Value = "FIRE DRILL"
+		dn.Parent = file
+		
 		local t = Instance.new("IntValue")
 		t.Name = "AlarmType"
 		t.Value = 1
