@@ -1,5 +1,5 @@
-local sett = require(script.SystemConfig)
-
+local settMod = require(script.SystemConfig)
+local sett = settMod
 -- System Configuration
 VisualUntilReset = sett.Standard.AudibleSilence
 TwoStage = sett.Standard.Two_Stage
@@ -277,21 +277,26 @@ function Drill()
 		local file = Instance.new("Model")
 		local filex = Instance.new("StringValue")
 		filex.Name = "DeviceName"
-		filex.Value = "Drill"
+		filex.Value = "FIRE DRILL"
 		filex.Parent = file
 
 		local dn = Instance.new("StringValue")
-		dn.Name = "DeviceName"
+		dn.Name = "ID"
 		dn.Value = "FIRE DRILL"
 		dn.Parent = file
+
+		local cond  = Instance.new("StringValue")
+		cond.Name = "Condition"
+		cond.Value = "DRILL"
+		cond.Parent = file
 		
 		local t = Instance.new("IntValue")
 		t.Name = "AlarmType"
 		t.Value = 1
 		t.Parent = file
 
-		file.Name = "01"
-		file.Parent = system.ActiveAlarms
+		file.Name = "FIRE DRILL"
+		file.Parent = system.Troubles
 
 		system.Silence.Value = false
 		system.Coder.PreAlarm.Disabled = true
@@ -299,7 +304,7 @@ function Drill()
 		system.Coder.VisualRelay.Disabled = false
 		fs = true
 
-		wait(120) -- drill duration
+		wait(sett.Standard.Drill_Timer)
 
 		system.Silence.Value = true
 		system.Coder.AudibleRelay.Disabled = true
@@ -420,13 +425,13 @@ game.Players.PlayerAdded:Connect(function(player)
 	end
 end)
 
-if sett.Version.Software < 030926 then -- This is a reminder.
+if sett.Version.Software < 031026 then -- This is a reminder.
 	if sett.Version.Enable_Update_Reminders then
 		warn("[Matter]: Siemens FV-922 Software is out of date! Please update to the newest version.")
 	end
 end
 
-if sett.Version.Hardware < 030926 then
+if sett.Version.Hardware < 031026 then
 	if sett.Version.Enable_Update_Reminders then
 		warn("[Matter]: Siemens FV-922 Hardware is out of date! Please update to the newest version.")
 	end
