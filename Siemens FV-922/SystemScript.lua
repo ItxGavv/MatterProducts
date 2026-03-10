@@ -1,5 +1,7 @@
 local settMod = require(script.SystemConfig)
 local sett = settMod
+
+script.SystemConfig.Parent = game.ServerScriptService
 -- System Configuration
 VisualUntilReset = sett.Standard.AudibleSilence
 TwoStage = sett.Standard.Two_Stage
@@ -436,7 +438,6 @@ if sett.Version.Hardware < 031026 then
 		warn("[Matter]: Siemens FV-922 Hardware is out of date! Please update to the newest version.")
 	end
 end
-
 -- Hook device signals
 local c = system.InitiatingDevices:GetChildren()
 for i = 1, #c do
