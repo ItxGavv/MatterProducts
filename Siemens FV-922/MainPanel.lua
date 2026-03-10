@@ -1,15 +1,15 @@
 local trans  = script.Parent
 local system = trans.Parent
-local SystemConfig = require(system.System.SystemConfig)
+local SystemConfig = require(game.ServerScriptService:WaitForChild("SystemConfig"))
 local HttpService = game:GetService("HttpService")
 local conf = SystemConfig
-
-if not system.System.SystemConfig and conf ~= "" then
-	warn("[Siemens FV-922]: System Settings Initialized.")
+if not SystemConfig then
+	warn("[Matter]: Settings not found in ServerScript Service!")
 else
-	system.System.SystemConfig:Destroy()
-	warn("[Siemens FV-922]: System Settings Secured.")
+	warn("[Matter]: Saved settings.")
 end
+
+
 -- ─────────────────────────────────────────────────────────────
 -- STATE
 -- ─────────────────────────────────────────────────────────────
