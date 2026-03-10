@@ -1867,12 +1867,17 @@ trans.Buttons.BTN_Ack.CD.MouseClick:Connect(AckAny)
 -- ─────────────────────────────────────────────────────────────
 trans.Buttons.BTN_Silence.CD.MouseClick:Connect(function()
 	if locked then return end
-	activateBacklight(); resetAccessTimeout()
-	system.SilenceCommand.Value = true
 	local silVal = system:FindFirstChild("Silenced")
-	if not silVal then silVal = Instance.new("BoolValue"); silVal.Name = "Silenced"; silVal.Parent = system end
-	silVal.Value = true; stopSounder(); updateAllLEDs()
-	setLine(1,"Audibles~Silenced~~~~~~~~~~~~~~~~~~~~~~~"); setLine(2,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"); clearLines(3,10)
+	activateBacklight(); resetAccessTimeout()
+	if system.Silence.Value then
+		system.ResoundCommand.Value = true
+		silVal.Value = false; updateAllLEDs()
+		setLine(1,"Audibles~Resounded~~~~~~~~~~~~~~~~~~~~~~~"); setLine(2,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"); clearLines(3,10)
+	else
+		system.SilenceCommand.Value = true
+		silVal.Value = true; stopSounder(); updateAllLEDs()
+		setLine(1,"Audibles~Silenced~~~~~~~~~~~~~~~~~~~~~~~"); setLine(2,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"); clearLines(3,10)
+	end 
 	task.wait(1.5)
 	if home then HomeDisplay() end
 end)
