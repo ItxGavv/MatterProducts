@@ -1,7 +1,7 @@
-local settMod = require(script.SystemConfig)
+script.SystemConfig.Parent = game.ServerScriptService
+local settMod = require(game.ServerScriptService.SystemConfig)
 local sett = settMod
 
-script.SystemConfig.Parent = game.ServerScriptService
 -- System Configuration
 VisualUntilReset = sett.Standard.AudibleSilence
 TwoStage = sett.Standard.Two_Stage
