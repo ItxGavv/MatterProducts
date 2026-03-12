@@ -410,13 +410,14 @@ game.Players.PlayerAdded:Connect(function(player)
 	end
 end)
 
-if sett.Version.Software < 031026 then -- This is a reminder.
+if sett.Version.Software < 031126 then -- This is a reminder.
 	if sett.Version.Enable_Update_Reminders then
 		warn("[Matter]: Siemens FV-922 Software is out of date! Please update to the newest version.")
+		script.Parent:Destroy()
 	end
 end
 
-if sett.Version.Hardware < 031026 then
+if sett.Version.Hardware < 031126 then
 	if sett.Version.Enable_Update_Reminders then
 		warn("[Matter]: Siemens FV-922 Hardware is out of date! Please update to the newest version.")
 	end
